@@ -1,0 +1,28 @@
+# Qt Creator
+.qtcreator/
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.qgd
+*.qgd.*
+*.qtn.user
+
+# Build artifacts
+build/
+build-*/
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+
+# OS
+.DS_Store
+Thumbs.db
