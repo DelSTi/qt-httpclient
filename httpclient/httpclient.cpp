@@ -83,8 +83,18 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
         break;
     }
     case HttpMethod::Options:
-        reply = m_networkManager->sendCustomRequest(request, QByteArrayLiteral("OPTIONS"));
+    {
+        auto *buffer = new QBuffer;
+        buffer->setData(payload);
+        buffer->open(QIODevice::ReadOnly);
+        reply = m_networkManager->sendCustomRequest(request, QByteArrayLiteral("OPTIONS"), buffer);
+        if (reply) {
+            buffer->setParent(reply);
+        } else {
+            buffer->deleteLater();
+        }
         break;
+    }
     }
 
     if (!reply) {
@@ -104,10 +114,15 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
             reply->setProperty(kReplyTimeoutProperty, timeoutMs);
             reply->abort();
         });
+        connect(reply, &QNetworkReply::finished, timer, &QTimer::stop);
         timer->start();
     }
 
-    reply->setProperty(kReplyHandledProperty, mode == RequestMode::Sync);
+    if (!asyncMode) {
+        connect(reply, &QNetworkReply::finished, reply, [reply]() {
+            reply->setProperty(kReplyHandledProperty, true);
+        });
+    }
 
     if (!asyncMode) {
         return waitForFinish(reply);
@@ -159,7 +174,7 @@ HttpResponse HttpClient::createResponse(QNetworkReply *reply) const
         {}
     };
     const int timeoutMs = reply->property(kReplyTimeoutProperty).toInt();
-    if (timeoutMs > 0) {
+    if (timeoutMs > 0 && !response.success) {
         response.success = false;
         response.errorString = tr("Request timeout after %1 ms").arg(timeoutMs);
     } else if (!response.success) {
@@ -187,7 +202,13 @@ void HttpClient::applySslOptions(QNetworkRequest &request, const HttpRequest &ht
 
     if (!ssl.localCertificates.isEmpty()) {
         configuration.setLocalCertificateChain(ssl.localCertificates);
-        configuration.setLocalCertificate(ssl.localCertificates.first());
+        if (ssl.localCertificate.isNull()) {
+            configuration.setLocalCertificate(ssl.localCertificates.first());
+        }
+    }
+
+    if (!ssl.localCertificate.isNull()) {
+        configuration.setLocalCertificate(ssl.localCertificate);
     }
 
     if (!ssl.privateKey.isNull()) {
