@@ -39,6 +39,7 @@ struct HttpSslOptions
     QSslConfiguration configuration;
     QList<QSslCertificate> caCertificates;
     QList<QSslCertificate> localCertificates;
+    QSslCertificate localCertificate;
     QSslKey privateKey;
     QString peerVerifyName;
     QSslSocket::PeerVerifyMode peerVerifyMode = QSslSocket::AutoVerifyPeer;

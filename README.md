@@ -73,6 +73,7 @@ qmake && make
 - For advanced setup, pass a custom `QSslConfiguration` or set specific parameters:
   ```cpp
   request.sslOptions.localCertificates = {clientCert};
+  request.sslOptions.localCertificate = clientCert; // explicit certificate selection
   request.sslOptions.privateKey = clientKey;
   request.sslOptions.caCertificates = QSslCertificate::fromPath(":/certs/ca.pem");
   request.sslOptions.peerVerifyMode = QSslSocket::VerifyPeer;
@@ -105,6 +106,9 @@ request.sslOptions.configuration = sslConfiguration;
 HttpClient client;
 client.fetch(request);
 ```
+
+## Notes
+- In `RequestMode::Sync` without `timeoutMs`, the wait can be infinite (if the server never responds).
 
 ## Extending
 - Add custom headers using `headers` as a list of `QPair<QByteArray, QByteArray>`.
