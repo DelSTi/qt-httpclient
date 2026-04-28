@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-04-28
+- Removed local `asyncMode` variable in `fetch()` and switched to direct `RequestMode` comparisons at usage points.
+
 ## 2026-02-05
 - Added payload support for `OPTIONS` requests.
 - Prevented timeout handling from overriding successful responses by stopping the timeout timer on `finished`.

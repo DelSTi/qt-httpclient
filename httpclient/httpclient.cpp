@@ -24,12 +24,11 @@ HttpClient::HttpClient(QObject *parent)
 
 HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
 {
-    const bool asyncMode = (mode == RequestMode::Async);
     auto makeErrorResponse = [](const QString &error) {
         return HttpResponse{false, -1, {}, error};
     };
-    auto handleImmediateError = [this, asyncMode](const HttpResponse &response) {
-        if (asyncMode) {
+    auto handleImmediateError = [this, mode](const HttpResponse &response) {
+        if (mode == RequestMode::Async) {
             emit finished(response);
         }
         return response;
@@ -118,13 +117,13 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
         timer->start();
     }
 
-    if (!asyncMode) {
+    if (mode == RequestMode::Sync) {
         connect(reply, &QNetworkReply::finished, reply, [reply]() {
             reply->setProperty(kReplyHandledProperty, true);
         });
     }
 
-    if (!asyncMode) {
+    if (mode == RequestMode::Sync) {
         return waitForFinish(reply);
     }
 
