@@ -15,6 +15,7 @@
 
 class QNetworkAccessManager;
 class QNetworkReply;
+class QNetworkRequest;
 
 enum class HttpMethod {
     Get,

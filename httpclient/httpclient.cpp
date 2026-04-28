@@ -25,7 +25,11 @@ HttpClient::HttpClient(QObject *parent)
 HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
 {
     auto makeErrorResponse = [](const QString &error) {
-        return HttpResponse{false, -1, {}, error};
+        HttpResponse response;
+        response.success = false;
+        response.statusCode = -1;
+        response.errorString = error;
+        return response;
     };
     auto handleImmediateError = [this, mode](const HttpResponse &response) {
         if (mode == RequestMode::Async) {
@@ -166,12 +170,10 @@ HttpResponse HttpClient::createResponse(QNetworkReply *reply) const
 
     const QVariant statusAttribute = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
     int statusCode = statusAttribute.isValid() ? statusAttribute.toInt() : -1;
-    HttpResponse response{
-        reply->error() == QNetworkReply::NoError,
-        statusCode,
-        reply->readAll(),
-        {}
-    };
+    HttpResponse response;
+    response.success = (reply->error() == QNetworkReply::NoError);
+    response.statusCode = statusCode;
+    response.payload = reply->readAll();
     const int timeoutMs = reply->property(kReplyTimeoutProperty).toInt();
     if (timeoutMs > 0 && !response.success) {
         response.success = false;
@@ -214,9 +216,11 @@ void HttpClient::applySslOptions(QNetworkRequest &request, const HttpRequest &ht
         configuration.setPrivateKey(ssl.privateKey);
     }
 
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     if (!ssl.peerVerifyName.isEmpty()) {
-        configuration.setPeerVerifyName(ssl.peerVerifyName);
+        request.setPeerVerifyName(ssl.peerVerifyName);
     }
+    #endif
 
     configuration.setPeerVerifyMode(ssl.peerVerifyMode);
     request.setSslConfiguration(configuration);
