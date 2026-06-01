@@ -4,9 +4,9 @@ Lightweight wrapper around `QNetworkAccessManager` that provides a simple API fo
 
 ## Features
 - Standard HTTP methods support (GET, POST, PUT, DELETE, HEAD) and custom ones (PATCH, OPTIONS).
-- Asynchronous and synchronous modes (`RequestMode::Async`/`RequestMode::Sync`).
-- Ready-to-use `HttpRequest` and `HttpResponse` structures for request/response data.
-- `finished(const HttpResponse &)` signal for async mode callbacks.
+- Asynchronous and synchronous modes (`HttpClientRequestMode::Async`/`HttpClientRequestMode::Sync`).
+- Ready-to-use `HttpClientRequest` and `HttpClientResponse` structures for request/response data.
+- `finished(const HttpClientResponse &)` signal for async mode callbacks.
 - Per-request `timeoutMs`.
 - Optional SSL settings: `QSslConfiguration`, certificate chains, private keys, and verification control.
 
@@ -36,8 +36,8 @@ qt-httpclient/
 ```cpp
 HttpClient client;
 
-HttpRequest request;
-request.method = HttpMethod::Post;
+HttpClientRequest request;
+request.method = HttpClientMethod::Post;
 request.url = QUrl(QStringLiteral("https://example.com/api"));
 request.headers.append({"Content-Type", "application/json"});
 request.payload = R"({"key":"value"})";
@@ -45,7 +45,7 @@ request.timeoutMs = 5000; // 5 секунд
 request.sslOptions.enabled = true;
 request.sslOptions.ignoreSslErrors = false;
 
-QObject::connect(&client, &HttpClient::finished, [](const HttpResponse &response) {
+QObject::connect(&client, &HttpClient::finished, [](const HttpClientResponse &response) {
     if (response.success) {
         qDebug() << "Status:" << response.statusCode << "Payload:" << response.payload;
     } else {
@@ -53,12 +53,12 @@ QObject::connect(&client, &HttpClient::finished, [](const HttpResponse &response
     }
 });
 
-client.fetch(request, RequestMode::Async);       // асинхронный вызов
-const auto syncResponse = client.fetch(request, RequestMode::Sync); // синхронный вызов
+client.fetch(request, HttpClientRequestMode::Async);       // асинхронный вызов
+const auto syncResponse = client.fetch(request, HttpClientRequestMode::Sync); // синхронный вызов
 ```
 
 ## Error handling
-- Invalid URL returns an `HttpResponse` with status `-1` and a filled `errorString`.
+- Invalid URL returns an `HttpClientResponse` with status `-1` and a filled `errorString`.
 - When `timeoutMs` elapses, the request is aborted and `errorString` contains `Request timeout after <ms> ms`.
 - On network errors, `errorString` contains the `QNetworkReply` error code and text like `"<code> - <message>"`.
 
@@ -83,7 +83,7 @@ qmake && make
 
 ### `QSslConfiguration` example
 ```cpp
-HttpRequest request;
+HttpClientRequest request;
 request.url = url;
 request.sslOptions.enabled = true;
 request.sslOptions.useCustomConfiguration = true;
@@ -108,7 +108,7 @@ client.fetch(request);
 ```
 
 ## Notes
-- In `RequestMode::Sync` without `timeoutMs`, the wait can be infinite (if the server never responds).
+- In `HttpClientRequestMode::Sync` without `timeoutMs`, the wait can be infinite (if the server never responds).
 
 ## Extending
 - Add custom headers using `headers` as a list of `QPair<QByteArray, QByteArray>`.

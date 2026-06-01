@@ -10,12 +10,12 @@ int main(int argc, char *argv[])
 
     HttpClient client;
 
-    HttpRequest request;
-    request.method = HttpMethod::Get;
+    HttpClientRequest request;
+    request.method = HttpClientMethod::Get;
     request.url = QUrl(QStringLiteral("https://httpbin.org/get"));
     request.timeoutMs = 5000;
 
-    const HttpResponse response = client.fetch(request, RequestMode::Sync);
+    const HttpClientResponse response = client.fetch(request, HttpClientRequestMode::Sync);
     if (response.success) {
         qDebug() << "Status:" << response.statusCode;
         qDebug().noquote() << response.payload;

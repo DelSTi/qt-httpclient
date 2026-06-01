@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-01
+- Renamed public API types to use the `HttpClient` prefix: `HttpClientMethod`, `HttpClientRequestMode`, `HttpClientSslOptions`, `HttpClientRequest`, and `HttpClientResponse`.
+- Updated examples and documentation to use the new prefixed type names.
+
 ## 2026-04-28
 - Removed local `asyncMode` variable in `fetch()` and switched to direct `RequestMode` comparisons at usage points.
 

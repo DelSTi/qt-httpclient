@@ -22,17 +22,17 @@ HttpClient::HttpClient(QObject *parent)
             this, &HttpClient::handleFinished);
 }
 
-HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
+HttpClientResponse HttpClient::fetch(const HttpClientRequest &httpRequest, HttpClientRequestMode mode)
 {
     auto makeErrorResponse = [](const QString &error) {
-        HttpResponse response;
+        HttpClientResponse response;
         response.success = false;
         response.statusCode = -1;
         response.errorString = error;
         return response;
     };
-    auto handleImmediateError = [this, mode](const HttpResponse &response) {
-        if (mode == RequestMode::Async) {
+    auto handleImmediateError = [this, mode](const HttpClientResponse &response) {
+        if (mode == HttpClientRequestMode::Async) {
             emit finished(response);
         }
         return response;
@@ -53,27 +53,27 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
     applySslOptions(request, httpRequest);
 
     QNetworkReply *reply = nullptr;
-    const HttpMethod method = httpRequest.method;
+    const HttpClientMethod method = httpRequest.method;
     const QByteArray payload = httpRequest.payload;
     const int timeoutMs = httpRequest.timeoutMs > 0 ? httpRequest.timeoutMs : 0;
 
     switch (method) {
-    case HttpMethod::Get:
+    case HttpClientMethod::Get:
         reply = m_networkManager->get(request);
         break;
-    case HttpMethod::Post:
+    case HttpClientMethod::Post:
         reply = m_networkManager->post(request, payload);
         break;
-    case HttpMethod::Put:
+    case HttpClientMethod::Put:
         reply = m_networkManager->put(request, payload);
         break;
-    case HttpMethod::Delete:
+    case HttpClientMethod::Delete:
         reply = m_networkManager->deleteResource(request);
         break;
-    case HttpMethod::Head:
+    case HttpClientMethod::Head:
         reply = m_networkManager->head(request);
         break;
-    case HttpMethod::Patch: {
+    case HttpClientMethod::Patch: {
         auto *buffer = new QBuffer;
         buffer->setData(payload);
         buffer->open(QIODevice::ReadOnly);
@@ -85,7 +85,7 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
         }
         break;
     }
-    case HttpMethod::Options:
+    case HttpClientMethod::Options:
     {
         auto *buffer = new QBuffer;
         buffer->setData(payload);
@@ -121,20 +121,20 @@ HttpResponse HttpClient::fetch(const HttpRequest &httpRequest, RequestMode mode)
         timer->start();
     }
 
-    if (mode == RequestMode::Sync) {
+    if (mode == HttpClientRequestMode::Sync) {
         connect(reply, &QNetworkReply::finished, reply, [reply]() {
             reply->setProperty(kReplyHandledProperty, true);
         });
     }
 
-    if (mode == RequestMode::Sync) {
+    if (mode == HttpClientRequestMode::Sync) {
         return waitForFinish(reply);
     }
 
     return {};
 }
 
-HttpResponse HttpClient::waitForFinish(QNetworkReply *reply)
+HttpClientResponse HttpClient::waitForFinish(QNetworkReply *reply)
 {
     if (!reply) {
         return {};
@@ -145,7 +145,7 @@ HttpResponse HttpClient::waitForFinish(QNetworkReply *reply)
     loop.exec();
 
     reply->setProperty(kReplyHandledProperty, true);
-    const HttpResponse response = createResponse(reply);
+    const HttpClientResponse response = createResponse(reply);
     reply->deleteLater();
     return response;
 }
@@ -157,12 +157,12 @@ void HttpClient::handleFinished(QNetworkReply *reply)
     }
 
     reply->setProperty(kReplyHandledProperty, true);
-    const HttpResponse response = createResponse(reply);
+    const HttpClientResponse response = createResponse(reply);
     emit finished(response);
     reply->deleteLater();
 }
 
-HttpResponse HttpClient::createResponse(QNetworkReply *reply) const
+HttpClientResponse HttpClient::createResponse(QNetworkReply *reply) const
 {
     if (!reply) {
         return {};
@@ -170,7 +170,7 @@ HttpResponse HttpClient::createResponse(QNetworkReply *reply) const
 
     const QVariant statusAttribute = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
     int statusCode = statusAttribute.isValid() ? statusAttribute.toInt() : -1;
-    HttpResponse response;
+    HttpClientResponse response;
     response.success = (reply->error() == QNetworkReply::NoError);
     response.statusCode = statusCode;
     response.payload = reply->readAll();
@@ -186,9 +186,9 @@ HttpResponse HttpClient::createResponse(QNetworkReply *reply) const
     return response;
 }
 
-void HttpClient::applySslOptions(QNetworkRequest &request, const HttpRequest &httpRequest) const
+void HttpClient::applySslOptions(QNetworkRequest &request, const HttpClientRequest &httpRequest) const
 {
-    const HttpSslOptions &ssl = httpRequest.sslOptions;
+    const HttpClientSslOptions &ssl = httpRequest.sslOptions;
     if (!ssl.enabled) {
         return;
     }
@@ -226,13 +226,13 @@ void HttpClient::applySslOptions(QNetworkRequest &request, const HttpRequest &ht
     request.setSslConfiguration(configuration);
 }
 
-void HttpClient::handleSslErrors(QNetworkReply *reply, const HttpRequest &httpRequest) const
+void HttpClient::handleSslErrors(QNetworkReply *reply, const HttpClientRequest &httpRequest) const
 {
     if (!reply) {
         return;
     }
 
-    const HttpSslOptions &ssl = httpRequest.sslOptions;
+    const HttpClientSslOptions &ssl = httpRequest.sslOptions;
     if (!ssl.enabled || !ssl.ignoreSslErrors) {
         return;
     }

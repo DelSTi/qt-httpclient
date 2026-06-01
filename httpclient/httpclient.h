@@ -17,7 +17,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QNetworkRequest;
 
-enum class HttpMethod {
+enum class HttpClientMethod {
     Get,
     Post,
     Put,
@@ -27,12 +27,12 @@ enum class HttpMethod {
     Options
 };
 
-enum class RequestMode {
+enum class HttpClientRequestMode {
     Async,
     Sync
 };
 
-struct HttpSslOptions
+struct HttpClientSslOptions
 {
     bool enabled = false;
     bool useCustomConfiguration = false;
@@ -46,17 +46,17 @@ struct HttpSslOptions
     QSslSocket::PeerVerifyMode peerVerifyMode = QSslSocket::AutoVerifyPeer;
 };
 
-struct HttpRequest
+struct HttpClientRequest
 {
-    HttpMethod method = HttpMethod::Get;
+    HttpClientMethod method = HttpClientMethod::Get;
     QUrl url;
     QList<QPair<QByteArray, QByteArray>> headers;
     QByteArray payload;
     int timeoutMs = 0;
-    HttpSslOptions sslOptions;
+    HttpClientSslOptions sslOptions;
 };
 
-struct HttpResponse
+struct HttpClientResponse
 {
     bool success = false;
     int statusCode = -1;
@@ -70,18 +70,18 @@ class HttpClient : public QObject
 public:
     explicit HttpClient(QObject *parent = nullptr);
 
-    HttpResponse fetch(const HttpRequest &httpRequest, RequestMode mode = RequestMode::Async);
-    HttpResponse waitForFinish(QNetworkReply *reply);
+    HttpClientResponse fetch(const HttpClientRequest &httpRequest, HttpClientRequestMode mode = HttpClientRequestMode::Async);
+    HttpClientResponse waitForFinish(QNetworkReply *reply);
 
 signals:
-    void finished(const HttpResponse &response);
+    void finished(const HttpClientResponse &response);
 
 private:
     QNetworkAccessManager *m_networkManager;
     void handleFinished(QNetworkReply *reply);
-    HttpResponse createResponse(QNetworkReply *reply) const;
-    void applySslOptions(QNetworkRequest &request, const HttpRequest &httpRequest) const;
-    void handleSslErrors(QNetworkReply *reply, const HttpRequest &httpRequest) const;
+    HttpClientResponse createResponse(QNetworkReply *reply) const;
+    void applySslOptions(QNetworkRequest &request, const HttpClientRequest &httpRequest) const;
+    void handleSslErrors(QNetworkReply *reply, const HttpClientRequest &httpRequest) const;
 };
 
 #endif // HTTPCLIENT_H
