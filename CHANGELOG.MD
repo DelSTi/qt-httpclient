@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-06-08
+- Marked synchronous replies as handled immediately before waiting for completion.
+
 ## 2026-06-01
 - Renamed public API types to use the `HttpClient` prefix: `HttpClientMethod`, `HttpClientRequestMode`, `HttpClientSslOptions`, `HttpClientRequest`, and `HttpClientResponse`.
 - Updated examples and documentation to use the new prefixed type names.

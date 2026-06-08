@@ -122,12 +122,7 @@ HttpClientResponse HttpClient::fetch(const HttpClientRequest &httpRequest, HttpC
     }
 
     if (mode == HttpClientRequestMode::Sync) {
-        connect(reply, &QNetworkReply::finished, reply, [reply]() {
-            reply->setProperty(kReplyHandledProperty, true);
-        });
-    }
-
-    if (mode == HttpClientRequestMode::Sync) {
+        reply->setProperty(kReplyHandledProperty, true);
         return waitForFinish(reply);
     }
 
